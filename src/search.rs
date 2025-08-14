@@ -72,3 +72,45 @@ pub fn is_config_node(binding: Node, source: &[u8]) -> bool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::new_parser;
+    use paste::paste;
+
+    use super::*;
+
+    fn run_test_case(source: &[u8]) {
+        let tree = new_parser()
+            .parse(source, None)
+            .expect("could not parse file");
+
+        find_node(tree.root_node(), |node| is_config_node(node, source))
+            .expect("could not find node");
+    }
+
+    macro_rules! generate_test_case {
+        ($case:expr) => {
+            paste! {
+                #[test]
+                fn [<test_search_ $case>]() {
+                    let source = include_bytes!(
+                        concat!(env!("CARGO_MANIFEST_DIR"), "/test-cases/", $case, ".nix")
+                    );
+                    run_test_case(source);
+                }
+            }
+        };
+    }
+
+    generate_test_case!("1");
+    generate_test_case!("2");
+    generate_test_case!("3");
+    generate_test_case!("4");
+    generate_test_case!("5");
+    generate_test_case!("6");
+    generate_test_case!("7");
+    generate_test_case!("8");
+    generate_test_case!("9");
+    generate_test_case!("10");
+}

@@ -13,7 +13,7 @@
 
           src = lib.cleanSource ./.;
 
-          cargoHash = "sha256-jvF63U+qTIt+I4LC89kOcVuDe2exgyV8IafmC0WwCWQ=";
+          cargoHash = "sha256-hMP+giOFmqAUJOWNn73ZgRKB/ej44GOWF7UFTIABOh8=";
 
           meta = {
             description = "strips nixos modules of their `config` attribute";

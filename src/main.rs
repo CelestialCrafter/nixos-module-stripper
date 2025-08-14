@@ -7,20 +7,28 @@ use std::{
 };
 
 use tree_sitter::Parser;
+use tree_sitter_nix::LANGUAGE;
 
 use crate::{
     config::CONFIG,
     search::{find_node, is_config_node},
 };
 
+fn new_parser() -> Parser {
+    let mut parser = Parser::new();
+    parser
+        .set_language(&LANGUAGE.into())
+        .expect("could not load nix grammar");
+
+    parser
+}
+
 fn main() {
     let mut source = fs::read(&CONFIG.path).expect("could not read file");
 
-    let mut parser = Parser::new();
-    parser
-        .set_language(&CONFIG.language)
-        .expect("could not load nix grammar");
-    let tree = parser.parse(&source, None).expect("could not parse file");
+    let tree = new_parser()
+        .parse(&source, None)
+        .expect("could not parse file");
 
     match find_node(tree.root_node(), |node| is_config_node(node, &source)) {
         Some(config_binding) => {

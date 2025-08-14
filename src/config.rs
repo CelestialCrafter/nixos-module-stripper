@@ -2,12 +2,9 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use eyre::Result;
 use pico_args::Arguments;
-use tree_sitter::Language;
-use tree_sitter_nix::LANGUAGE;
 
 pub struct Config {
     pub path: PathBuf,
-    pub language: Language,
 }
 
 pub static CONFIG: LazyLock<Config> =
@@ -16,6 +13,5 @@ pub static CONFIG: LazyLock<Config> =
 fn parse_args(args: &mut Arguments) -> Result<Config> {
     Ok(Config {
         path: args.free_from_str()?,
-        language: LANGUAGE.into(),
     })
 }
