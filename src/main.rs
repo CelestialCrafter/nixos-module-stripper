@@ -1,18 +1,11 @@
-mod config;
 mod search;
 
-use std::{
-    fs,
-    io::{Write, stdout},
-};
+use std::io::{Read, Write, stdin, stdout};
 
 use tree_sitter::Parser;
 use tree_sitter_nix::LANGUAGE;
 
-use crate::{
-    config::CONFIG,
-    search::{find_node, is_config_node},
-};
+use crate::search::{find_node, is_config_node};
 
 fn new_parser() -> Parser {
     let mut parser = Parser::new();
@@ -24,7 +17,10 @@ fn new_parser() -> Parser {
 }
 
 fn main() {
-    let mut source = fs::read(&CONFIG.path).expect("could not read file");
+    let mut source = Vec::with_capacity(8192);
+    stdin()
+        .read_to_end(&mut source)
+        .expect("could not read from stdin");
 
     let tree = new_parser()
         .parse(&source, None)
