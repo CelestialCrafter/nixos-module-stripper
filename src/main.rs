@@ -5,7 +5,7 @@ use std::io::{Read, Write, stdin, stdout};
 use tree_sitter::Parser;
 use tree_sitter_nix::LANGUAGE;
 
-use crate::search::{find_node, is_config_node};
+use crate::search::find_config_node;
 
 fn new_parser() -> Parser {
     let mut parser = Parser::new();
@@ -26,11 +26,11 @@ fn main() {
         .parse(&source, None)
         .expect("could not parse file");
 
-    match find_node(tree.root_node(), |node| is_config_node(node, &source)) {
-        Some(config_binding) => {
-            source.drain(config_binding.byte_range());
+    match find_config_node(tree.root_node(), &source) {
+        Some(node) => {
+            source.drain(node.byte_range());
         }
-        None => eprintln!("could not find config node (is this a nixos module?)"),
+        None => eprintln!("could not find a config node (is this a nixos module?)"),
     }
 
     stdout()

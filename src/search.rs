@@ -1,12 +1,5 @@
 use tree_sitter::Node;
 
-fn binding_identifier_text<'a>(binding: Node, source: &'a [u8]) -> Option<&'a str> {
-    let name = binding
-        .child_by_field_name("attrpath")?
-        .child_by_field_name("attr")?;
-    name.utf8_text(source).ok()
-}
-
 pub fn find_node<'a>(root: Node<'a>, mut predicate: impl FnMut(Node) -> bool) -> Option<Node<'a>> {
     let mut cursor = root.walk();
 
@@ -42,35 +35,29 @@ pub fn find_node<'a>(root: Node<'a>, mut predicate: impl FnMut(Node) -> bool) ->
     }
 }
 
-pub fn is_config_node(binding: Node, source: &[u8]) -> bool {
+pub fn find_config_node<'a>(root: Node<'a>, source: &[u8]) -> Option<Node<'a>> {
+    find_node(root, |n| explicit_config_predicate(n, source))
+        .or_else(|| find_node(root, implicit_config_predicate))
+}
+
+fn binding_identifier_text<'a>(binding: Node, source: &'a [u8]) -> Option<&'a str> {
+    let name = binding
+        .child_by_field_name("attrpath")?
+        .child_by_field_name("attr")?;
+    name.utf8_text(source).ok()
+}
+
+// WARN: fragile
+pub fn implicit_config_predicate(binding: Node) -> bool {
+    binding.kind() == "binding_set"
+}
+
+pub fn explicit_config_predicate(binding: Node, source: &[u8]) -> bool {
     if binding.kind() != "binding" {
         return false;
     }
 
-    if let Some("config") = binding_identifier_text(binding, source) {
-        return false;
-    }
-
-    let mut cursor = {
-        let binding_set = match binding.parent() {
-            Some(v) => v,
-            None => return false,
-        };
-        debug_assert_eq!(binding_set.kind(), "binding_set");
-
-        binding_set.walk()
-    };
-
-    cursor.goto_first_child();
-    loop {
-        if let Some("options") = binding_identifier_text(cursor.node(), source) {
-            break true;
-        }
-
-        if !cursor.goto_next_sibling() {
-            break false;
-        }
-    }
+    matches!(binding_identifier_text(binding, source), Some("config"))
 }
 
 #[cfg(test)]
@@ -85,8 +72,7 @@ mod tests {
             .parse(source, None)
             .expect("could not parse file");
 
-        find_node(tree.root_node(), |node| is_config_node(node, source))
-            .expect("could not find node");
+        find_config_node(tree.root_node(), source).expect("could not find node");
     }
 
     macro_rules! generate_test_case {
